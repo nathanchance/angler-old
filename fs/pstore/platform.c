@@ -223,7 +223,9 @@ static int pstore_write_compat(enum pstore_type_id type,
 			       u64 *id, unsigned int part, int count,
 			       size_t size, struct pstore_info *psi)
 {
-	return psi->write_buf(type, reason, id, part, psinfo->buf, size, psi);
+	return psi->write_buf(type, reason, id, part,
+			      (const void *)psinfo->buf, size,
+			      PSTORE_FROM_KERNEL, psi);
 }
 
 /*
