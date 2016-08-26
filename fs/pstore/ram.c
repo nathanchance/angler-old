@@ -204,6 +204,7 @@ static size_t ramoops_write_kmsg_hdr(struct persistent_ram_zone *prz)
 	char *hdr;
 	struct timespec timestamp;
 	size_t len;
+	int ret;
 
 	/* Report zeroed timestamp if called before timekeeping has resumed. */
 	if (__getnstimeofday(&timestamp)) {
@@ -214,37 +215,36 @@ static size_t ramoops_write_kmsg_hdr(struct persistent_ram_zone *prz)
 		(long)timestamp.tv_sec, (long)(timestamp.tv_nsec / 1000));
 	WARN_ON_ONCE(!hdr);
 	len = hdr ? strlen(hdr) : 0;
-	persistent_ram_write(prz, hdr, len);
+	ret = persistent_ram_write(prz, hdr, len, PSTORE_FROM_KERNEL);
 	kfree(hdr);
 
-	return len;
+	return ret ? 0 : len;
 }
 
 static int notrace ramoops_pstore_write_buf(enum pstore_type_id type,
 					    enum kmsg_dump_reason reason,
 					    u64 *id, unsigned int part,
 					    const char *buf, size_t size,
+					    enum pstore_from_id from_user,
 					    struct pstore_info *psi)
 {
 	struct ramoops_context *cxt = psi->data;
 	struct persistent_ram_zone *prz;
 	size_t hlen;
+	int ret;
 
 	if (type == PSTORE_TYPE_CONSOLE) {
 		if (!cxt->cprz)
 			return -ENOMEM;
-		persistent_ram_write(cxt->cprz, buf, size);
-		return 0;
+		return persistent_ram_write(cxt->cprz, buf, size, from_user);
 	} else if (type == PSTORE_TYPE_FTRACE) {
 		if (!cxt->fprz)
 			return -ENOMEM;
-		persistent_ram_write(cxt->fprz, buf, size);
-		return 0;
+		return persistent_ram_write(cxt->fprz, buf, size, from_user);
 	} else if (type == PSTORE_TYPE_PMSG) {
 		if (!cxt->mprz)
 			return -ENOMEM;
-		persistent_ram_write(cxt->mprz, buf, size);
-		return 0;
+		return persistent_ram_write(cxt->mprz, buf, size, from_user);
 	}
 
 	if (type != PSTORE_TYPE_DMESG)
@@ -277,11 +277,11 @@ static int notrace ramoops_pstore_write_buf(enum pstore_type_id type,
 	hlen = ramoops_write_kmsg_hdr(prz);
 	if (size + hlen > prz->buffer_size)
 		size = prz->buffer_size - hlen;
-	persistent_ram_write(prz, buf, size);
+	ret = persistent_ram_write(prz, buf, size, from_user);
 
 	cxt->dump_write_cnt = (cxt->dump_write_cnt + 1) % cxt->max_dump_cnt;
 
-	return 0;
+	return ret;
 }
 
 static int ramoops_pstore_erase(enum pstore_type_id type, u64 id, int count,
@@ -414,10 +414,10 @@ static int ramoops_init_prz(struct device *dev, struct ramoops_context *cxt,
 	return 0;
 }
 
-void notrace ramoops_console_write_buf(const char *buf, size_t size)
+int notrace ramoops_console_write_buf(const char *buf, size_t size)
 {
 	struct ramoops_context *cxt = &oops_cxt;
-	persistent_ram_write(cxt->cprz, buf, size);
+	return persistent_ram_write(cxt->cprz, buf, size, PSTORE_FROM_KERNEL);
 }
 
 #ifdef CONFIG_OF

@@ -15,17 +15,15 @@
 #include <linux/device.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
-#include <linux/vmalloc.h>
 #include "internal.h"
 
 static DEFINE_MUTEX(pmsg_lock);
-#define PMSG_MAX_BOUNCE_BUFFER_SIZE (2*PAGE_SIZE)
 
 static ssize_t write_pmsg(struct file *file, const char __user *buf,
 			  size_t count, loff_t *ppos)
 {
-	size_t i, buffer_size;
-	char *buffer;
+	u64 id;
+	int ret;
 
 	if (!count)
 		return 0;
@@ -33,34 +31,11 @@ static ssize_t write_pmsg(struct file *file, const char __user *buf,
 	if (!access_ok(VERIFY_READ, buf, count))
 		return -EFAULT;
 
-	buffer_size = count;
-	if (buffer_size > PMSG_MAX_BOUNCE_BUFFER_SIZE)
-		buffer_size = PMSG_MAX_BOUNCE_BUFFER_SIZE;
-	buffer = vmalloc(buffer_size);
-	if (!buffer)
-		return -ENOMEM;
-
 	mutex_lock(&pmsg_lock);
-	for (i = 0; i < count; ) {
-		size_t c = min(count - i, buffer_size);
-		u64 id;
-		long ret;
-
-		ret = __copy_from_user(buffer, buf + i, c);
-		if (unlikely(ret != 0)) {
-			mutex_unlock(&pmsg_lock);
-			vfree(buffer);
-			return -EFAULT;
-		}
-		psinfo->write_buf(PSTORE_TYPE_PMSG, 0, &id, 0, buffer, c,
-				  psinfo);
-
-		i += c;
-	}
-
+	ret = psinfo->write_buf(PSTORE_TYPE_PMSG, 0, &id, 0, (const char *)buf,
+				count, PSTORE_FROM_USER, psinfo);
 	mutex_unlock(&pmsg_lock);
-	vfree(buffer);
-	return count;
+	return ret ? ret : count;
 }
 
 static const struct file_operations pmsg_fops = {
