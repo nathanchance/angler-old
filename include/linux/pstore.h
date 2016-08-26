@@ -39,6 +39,12 @@ enum pstore_type_id {
 	PSTORE_TYPE_UNKNOWN	= 255
 };
 
+/* copy from user space */
+enum pstore_from_id {
+	PSTORE_FROM_KERNEL = 0,
+	PSTORE_FROM_USER   = 1
+};
+
 struct module;
 
 struct pstore_info {
@@ -60,6 +66,7 @@ struct pstore_info {
 	int		(*write_buf)(enum pstore_type_id type,
 			enum kmsg_dump_reason reason, u64 *id,
 			unsigned int part, const char *buf, size_t size,
+			enum pstore_from_id from_user,
 			struct pstore_info *psi);
 	int		(*erase)(enum pstore_type_id type, u64 id,
 			int count, struct timespec time,
