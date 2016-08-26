@@ -18,10 +18,11 @@
 #define __LINUX_PSTORE_RAM_H__
 
 #include <linux/device.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/list.h>
+#include <linux/pstore.h>
 #include <linux/types.h>
-#include <linux/init.h>
 
 struct persistent_ram_buffer;
 struct rs_control;
@@ -59,7 +60,7 @@ void persistent_ram_free(struct persistent_ram_zone *prz);
 void persistent_ram_zap(struct persistent_ram_zone *prz);
 
 int persistent_ram_write(struct persistent_ram_zone *prz, const void *s,
-	unsigned int count);
+	unsigned int count, enum pstore_from_id from_user);
 
 void persistent_ram_save_old(struct persistent_ram_zone *prz);
 size_t persistent_ram_old_size(struct persistent_ram_zone *prz);
@@ -68,7 +69,7 @@ void persistent_ram_free_old(struct persistent_ram_zone *prz);
 ssize_t persistent_ram_ecc_string(struct persistent_ram_zone *prz,
 	char *str, size_t len);
 
-void ramoops_console_write_buf(const char *buf, size_t size);
+int ramoops_console_write_buf(const char *buf, size_t size);
 
 /*
  * Ramoops platform data
