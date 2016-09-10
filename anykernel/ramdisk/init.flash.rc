@@ -1,0 +1,83 @@
+# Flash initialization script
+# Pieces taken from @anarkia1976, @franciscofranco, @frap129, and @flar2
+
+on boot
+   # initialize frequency limits
+   # from anarkia1976
+   # Little cluster min - 302 MHz
+   chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq_hardlimit
+   chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq_hardlimit
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq_hardlimit 302400
+   # Little cluster max - 1708 MHz
+   chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq_hardlimit
+   chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq_hardlimit
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq_hardlimit 1708800
+   # Big cluster min - 302 MHz
+   chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq_hardlimit
+   chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq_hardlimit
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq_hardlimit 302400
+   # Big cluster max - 2054 MHz
+   chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq_hardlimit
+   chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq_hardlimit
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq_hardlimit 2054400
+
+on property:sys.boot_completed=1
+   # according to Qcom this legacy value improves first launch latencies
+   # stock value is 512k
+   # from franciscofranco
+   setprop dalvik.vm.heapminfree 2m
+
+   # Default I/O values
+   # zen as I think it is the best balance
+   # 128 because we don't need a lot of CPU overhead on an SSD and users are always free to change this
+   write /sys/block/mmcblk0/queue/scheduler zen
+   write /sys/block/mmcblk0/queue/read_ahead_kb 128
+
+   # Stock frequencies and interactive governor
+   # The user can overclock if they want but it is a little more stable to use these frequencies
+   # Little cluster governor - interactve
+   chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+   chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor interactive
+   # Little cluster min - 384 MHz
+   chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+   chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq 384000
+   # Little cluster max - 1555 MHz
+   chown system system /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+   chmod 0664 /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq
+   write /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq 1555200
+   # Big cluster governor - interactve 
+   chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+   chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_governor interactive
+   # Big cluster min - 633 MHz
+   chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+   chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_min_freq 633600
+   # Big cluster max - 1958 MHz
+   chown system system /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+   chmod 0664 /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq
+   write /sys/devices/system/cpu/cpu4/cpufreq/scaling_max_freq 1958400
+
+   # Input boost settings
+   # 960MHz on little for 40ms
+   # Should keep performance snappy while helping with battery a little bit
+   write /sys/module/cpu_boost/parameters/input_boost_freq "0:960000 1:0 2:0 3:0 4:0 5:0 6:0 7:0"
+   write /sys/module/cpu_boost/parameters/boost_ms 0
+   write /sys/module/cpu_boost/parameters/input_boost_ms 40
+
+   # Wakelock dividers
+   # This will help with disconnects on poorly configured 5GHz networks
+   write /sys/module/bcmdhd/parameters/wlrx_divide 8
+   write /sys/module/bcmdhd/parameters/wlctrl_divide 8
+
+   # Plug in all cores
+   write /sys/devices/system/cpu/cpu0/online 1
+   write /sys/devices/system/cpu/cpu1/online 1
+   write /sys/devices/system/cpu/cpu2/online 1
+   write /sys/devices/system/cpu/cpu3/online 1
+   write /sys/devices/system/cpu/cpu4/online 1
+   write /sys/devices/system/cpu/cpu5/online 1
+   write /sys/devices/system/cpu/cpu6/online 1
+   write /sys/devices/system/cpu/cpu7/online 1
