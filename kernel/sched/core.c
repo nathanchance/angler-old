@@ -5476,7 +5476,7 @@ static void __cpuinit set_cpu_rq_start_time(void)
 	rq->age_stamp = sched_clock_cpu(cpu);
 }
 
-static int sched_cpu_active(struct notifier_block *nfb,
+static int __cpuinit sched_cpu_active(struct notifier_block *nfb,
 				      unsigned long action, void *hcpu)
 {
 	switch (action & ~CPU_TASKS_FROZEN) {
@@ -5491,7 +5491,7 @@ static int sched_cpu_active(struct notifier_block *nfb,
 	}
 }
 
-static int sched_cpu_inactive(struct notifier_block *nfb,
+static int __cpuinit sched_cpu_inactive(struct notifier_block *nfb,
 					unsigned long action, void *hcpu)
 {
 	unsigned long flags;
